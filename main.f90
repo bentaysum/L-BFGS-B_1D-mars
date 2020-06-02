@@ -9,6 +9,7 @@ PROGRAM main
 ! the Curiosity Rover.
 
 use netcdf 
+use main_globvar
 
 IMPLICIT NONE 
 
@@ -35,7 +36,7 @@ INTEGER N_files ! Number of files in control directory
 INTEGER N_choice ! Choice of file
 CHARACTER(len=100) dummy 
 INTEGER iostat ! Reading error integer 
-INTEGER N ! loop iterator 
+INTEGER N ,iq ! loop iterators 
 
 
 
@@ -49,7 +50,7 @@ INTEGER N ! loop iterator
 
 
 ! =========================================================
-! Stage One: Selection of the 1-D model files to be studied 
+! Stage 1.0: Selection of the 1-D model files to be studied 
 ! =========================================================
 
 ! Control file, PQ_c
@@ -63,15 +64,19 @@ DO
     N_files = N_files + 1
 ENDDO 
 CLOSE(10)
+
 ALLOCATE(NAME_LIST(N_files))
 ! Read the text file again and save the file names in NAME_LIST
 open(10,FILE="controlname_holding.txt",ACTION="READ")
 write(*,"(a25)")"========================="
-DO N = 1, N_files
+
+
+
+10 DO N = 1, N_files
     READ(10,'(a)',iostat = iostat) NAME_LIST(N)
     ! Display in terminal for user selection 
     WRITE(*,"(I5,A20)") N,  TRIM(NAME_LIST(N))
-ENDDO
+   ENDDO
 
 ! Choice of file 
 20 write(*,"(a25)")"========================="
@@ -91,6 +96,36 @@ CONTROL_NCDF = TRIM(NAME_LIST(N_choice))
 TLM_BIN = TRIM(CONTROL_NCDF(1: LEN_TRIM(CONTROL_NCDF) - 3 )) // "_tlm.bin"
 TLM_TEXT = TRIM(CONTROL_NCDF(1: LEN_TRIM(CONTROL_NCDF) - 3 )) // "_tlm.txt"
 
+! -------------------------------------------------------
+! Stage 1.1 : Reading the TLM text file and allocation of
+!             relevant global variables 
+! -------------------------------------------------------
+OPEN(10,FILE=TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_TEXT),ACTION="READ",iostat=iostat)
+IF ( iostat .ne. 0 ) THEN
+    WRITE(*,*) "TEXT FILE FOR TLM MISSING"
+    WRITE(*,*) TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_TEXT)
+    GOTO 10
+ELSE 
+    WRITE(*,*) "Structure File : ", TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_TEXT)
+ENDIF 
+
+! Scratch first two line 
+READ(10,"(a)") dummy
+READ(10,"(a)") dummy
+! Total number of model timesteps, tracers, and model layers 
+READ(10,"(a15,I5)") dummy, ndt
+READ(10,"(a15,I5)") dummy, nqmx
+READ(10,"(a15,I5)") dummy, nlayermx
+! Allocate size of variables in routine 
+ALLOCATE(noms(nqmx))
+ALLOCATE(pq_c(ndt,nqmx*nlayermx))
+pq_c(:,:) = 0.E0 
+READ(10,"(a)") dummy
+
+! Get order of tracers in the TLM model Structure
+DO iq = 1,nqmx
+    READ(10,"(a10,a5)") noms(iq), dummy
+ENDDO
 
 
 END
