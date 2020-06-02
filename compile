@@ -1,0 +1,6 @@
+#!/bin/bash
+
+NCDFLIB=/usr/lib64/gfortran/modules
+NCDFINC=/usr/include
+
+gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff main.f90 -o run.e

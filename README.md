@@ -12,3 +12,5 @@ vector in the same shape as in the adjoint/tangent linear model code i.e.
 [nlayermx*nqmx]. 
 
 ### Begins on 02/06/2020
+Stage One now acquires the relevant tlm bin and text and control ncdf file names
+from command line prompts in main.f90.
