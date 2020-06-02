@@ -121,9 +121,9 @@ READ(10,"(a15,I5)") dummy, nlayermx
 ALLOCATE(noms(nqmx))
 ALLOCATE(pq_c(ndt,nqmx*nlayermx))
 pq_c(:,:) = 0.E0 
-ALLOCATE(TLM_double(nqmx*nlayermx,nqmx*nlayermx))
-ALLOCATE(TLM(ndt,nqmx*nlayermx,nqmx*nlayermx))
-ALLOCATE(ADJ(ndt,nqmx*nlayermx,nqmx*nlayermx))
+! ALLOCATE(TLM_double(nqmx*nlayermx,nqmx*nlayermx))
+ALLOCATE(TLM(nqmx*nlayermx,nqmx*nlayermx,ndt))
+ALLOCATE(ADJ(nqmx*nlayermx,nqmx*nlayermx,ndt))
 
 
 ! Discard next line
@@ -148,12 +148,10 @@ WRITE(*,*) "BINARY TLM FILE : ", TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN)
 OPEN(50,FILE = TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN), ACCESS = 'direct', &
         RECL = nqmx*nlayermx*nqmx*nlayermx*8)
 DO t = 1, ndt 
-    READ(50,rec=t) ( ( TLM_double(a,b), a = 1, nqmx*nlayermx ), b = 1, nqmx*nlayermx )
-    ! Double -> Single precision 
-    TLM(ndt,:,:) = TLM_double 
+    READ(50,rec=t) ( ( TLM(a,b,t), a = 1, nqmx*nlayermx ), b = 1, nqmx*nlayermx )
     ! Adjoint is the TLM transpose 
-    ADJ(ndt,:,:) = TRANSPOSE(TLM(ndt,:,:))
-
+    write(*,"(F6.2,A1)") 100.*REAL(t)/REAL(ndt), "%"
+    ADJ(:,:,t) = TRANSPOSE(TLM(:,:,t))
 ENDDO 
 
 call adjoint_1D

@@ -21,12 +21,6 @@ INTEGER J_LAYER
 INTEGER J_idx 
 
 
-
-
-
-
-
-
 ! Asks the user which timestep out of NDT they would like to 
 ! trace the adjoint model backwards towards AND from, what tracer they
 ! wish to study, and at what model layer.
@@ -127,13 +121,13 @@ IF ( iostat .ne. 0 ) THEN
 ENDIF 
 
 ! Find index in TLM of forecast element J_l^t 
-hatJ(:,:) = 0.E0 
+hatJ(:,:) = 0.D0 
 DO iq = 1,nqmx
     IF ( trim(noms(iq)) == trim(J_TRACER) ) THEN 
         
         J_idx = (iq-1)*nlayermx + J_LAYER 
         
-        hatJ(t_N-t_0, J_idx) = 1. 
+        hatJ(t_N-t_0, J_idx) = 1.D0
         
         GOTO 50  
     
@@ -150,10 +144,8 @@ ENDDO
 
 ! Engage backtrace of the adjoint 
 DO t = (t_N-t_0) - 1, 1, -1 
-    hatJ(t,:) = MATMUL(ADJ(t,:,:),hatJ(t+1,:))
-
-    write(*,*) hatJ(t+1, J_idx), MAXVAL(ADJ(t,:,:)), MINVAL(ADJ(t,:,:))
-
+    hatJ(t,:) = MATMUL(ADJ(:,:,t),hatJ(t+1,:))
+    write(*,*) hatJ(t,J_idx)
 ENDDO 
 
 
