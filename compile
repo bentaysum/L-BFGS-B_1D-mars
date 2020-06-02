@@ -3,4 +3,4 @@
 NCDFLIB=/usr/lib64/gfortran/modules
 NCDFINC=/usr/include
 
-gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff main.f90 main_globvar.f90 -o run.e
+gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff main.f90 main_globvar.f90 oneDmgcm_reader.f90 -o run.e

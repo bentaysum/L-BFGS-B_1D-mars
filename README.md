@@ -19,3 +19,4 @@ from command line prompts in main.f90.
 Stage 1.1 : Acquires ndt, nlayermx, nqmx and allocates dimensions of mixing ratio
 vectors, and finds order of tracers in TLM matrix space.
 
+Stage 1.2 : Control state MMR vector successfully read into model

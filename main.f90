@@ -127,5 +127,9 @@ DO iq = 1,nqmx
     READ(10,"(a10,a5)") noms(iq), dummy
 ENDDO
 
+! -------------------------------------------------------
+! Stage 1.2 : Construct the control state vector 
+! -------------------------------------------------------
+call oneDmgcm_reader(TRIM(head_dir)//TRIM(control_dir)//TRIM(CONTROL_NCDF))
 
 END
