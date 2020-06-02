@@ -36,9 +36,10 @@ INTEGER N_files ! Number of files in control directory
 INTEGER N_choice ! Choice of file
 CHARACTER(len=100) dummy 
 INTEGER iostat ! Reading error integer 
-INTEGER N ,iq ! loop iterators 
+INTEGER N ,iq, t ! loop iterators 
+INTEGER a,b ! loop iterators 
 
-
+REAL*8, ALLOCATABLE :: TLM_double(:,:)
 
 
 
@@ -110,7 +111,7 @@ ELSE
 ENDIF 
 
 ! Scratch first two line 
-READ(10,"(a)") dummy
+READ(10,"(a15,F6.3)") dummy, lt_init
 READ(10,"(a)") dummy
 ! Total number of model timesteps, tracers, and model layers 
 READ(10,"(a15,I5)") dummy, ndt
@@ -120,16 +121,42 @@ READ(10,"(a15,I5)") dummy, nlayermx
 ALLOCATE(noms(nqmx))
 ALLOCATE(pq_c(ndt,nqmx*nlayermx))
 pq_c(:,:) = 0.E0 
+ALLOCATE(TLM_double(nqmx*nlayermx,nqmx*nlayermx))
+ALLOCATE(TLM(ndt,nqmx*nlayermx,nqmx*nlayermx))
+ALLOCATE(ADJ(ndt,nqmx*nlayermx,nqmx*nlayermx))
+
+
+! Discard next line
 READ(10,"(a)") dummy
 
 ! Get order of tracers in the TLM model Structure
 DO iq = 1,nqmx
     READ(10,"(a10,a5)") noms(iq), dummy
 ENDDO
+CLOSE(10)
 
 ! -------------------------------------------------------
 ! Stage 1.2 : Construct the control state vector 
 ! -------------------------------------------------------
 call oneDmgcm_reader(TRIM(head_dir)//TRIM(control_dir)//TRIM(CONTROL_NCDF))
+
+
+! =======================================================
+! Stage 2.0 : Adjoint Model
+! =======================================================
+WRITE(*,*) "BINARY TLM FILE : ", TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN) 
+OPEN(50,FILE = TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN), ACCESS = 'direct', &
+        RECL = nqmx*nlayermx*nqmx*nlayermx*8)
+DO t = 1, ndt 
+    READ(50,rec=t) ( ( TLM_double(a,b), a = 1, nqmx*nlayermx ), b = 1, nqmx*nlayermx )
+    ! Double -> Single precision 
+    TLM(ndt,:,:) = TLM_double 
+    ! Adjoint is the TLM transpose 
+    ADJ(ndt,:,:) = TRANSPOSE(TLM(ndt,:,:))
+
+ENDDO 
+
+call adjoint_1D
+
 
 END

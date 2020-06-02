@@ -20,3 +20,6 @@ Stage 1.1 : Acquires ndt, nlayermx, nqmx and allocates dimensions of mixing rati
 vectors, and finds order of tracers in TLM matrix space.
 
 Stage 1.2 : Control state MMR vector successfully read into model
+
+Stage 2. : Routine initialises the sensitivity vector, but adjoint reads in in main.f90
+as matrix of 0s. Investigate.

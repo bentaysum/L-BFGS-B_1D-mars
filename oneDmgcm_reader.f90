@@ -43,8 +43,6 @@ enddo
 
 
 
-STOP
-
 END SUBROUTINE
 
 
