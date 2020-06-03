@@ -4,22 +4,10 @@ This repository holds routines that aim to use the L-BFGS-B optimization routine
 to work with Curiosity Rover data and the 1-D photochemistry model and it's 
 adjoint, developed by Benjamin M. Taysum.
 
-## Stage One
+## Log 
 
-Create a routine that reads in two atmospheric states, a control and a 
-perturbed 1-D model run [nqmx,nlayermx] in shape, to create an atmospheric state
-vector in the same shape as in the adjoint/tangent linear model code i.e.
-[nlayermx*nqmx]. 
+### 03/06/2020
 
-### Begins on 02/06/2020
+Optimization routine fails to work. Poorly defined cost function and gradient is probably the
+source of the issue. Assess mathematics and ensure we feed the routines the correct variables.
 
-Stage 1:  acquires the relevant tlm bin and text and control ncdf file names
-from command line prompts in main.f90.
-
-Stage 1.1 : Acquires ndt, nlayermx, nqmx and allocates dimensions of mixing ratio
-vectors, and finds order of tracers in TLM matrix space.
-
-Stage 1.2 : Control state MMR vector successfully read into model
-
-Stage 2. : Routine initialises the sensitivity vector, but adjoint reads in in main.f90
-as matrix of 0s. Investigate.

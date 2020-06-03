@@ -1,5 +1,5 @@
 GFORTRAN module version '10' created from main_globvar.f90
-MD5:a3dcfc1871a5e85873be25663c2d2cb7 -- If you edit this, you'll get what you deserve.
+MD5:cd06826a9fb1af458a82bbfcf8420ea4 -- If you edit this, you'll get what you deserve.
 
 (() () () () () () () () () () () () () () () () () () () () () () () ()
 () () ())
@@ -20,31 +20,41 @@ UNKNOWN IMPLICIT-SAVE 0 0 ALLOCATABLE DIMENSION) (REAL 8 0 0 0 REAL ())
 3 'hatj' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN IMPLICIT-SAVE 0 0 ALLOCATABLE DIMENSION) (REAL 8 0 0 0 REAL ())
 0 0 () (2 0 DEFERRED () () () ()) 0 () () () 0 0)
-4 'lt_init' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+4 'j_idx' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
+0)
+5 'lt_init' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0) (REAL 4 0 0 0 REAL ()) 0 0 () () 0 () () () 0 0)
-5 'main_globvar' 'main_globvar' '' 1 ((MODULE UNKNOWN-INTENT
+6 'main_globvar' 'main_globvar' '' 1 ((MODULE UNKNOWN-INTENT
 UNKNOWN-PROC UNKNOWN UNKNOWN 0 0) (UNKNOWN 0 0 0 0 UNKNOWN ()) 0 0 () ()
 0 () () () 0 0)
-6 'ndt' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+7 'ndt' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
 0)
-7 'nlayermx' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+8 'nlayermx' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
 0)
-8 'noms' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+9 'noms' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN IMPLICIT-SAVE 0 0 ALLOCATABLE DIMENSION) (CHARACTER 1 0 0 0
 CHARACTER ((CONSTANT (INTEGER 4 0 0 0 INTEGER ()) 0 '15'))) 0 0 () (1 0
 DEFERRED () ()) 0 () () () 0 0)
-9 'nqmx' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+10 'nqmx' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
 0)
-10 'pq_c' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+11 'pq_c' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN IMPLICIT-SAVE 0 0 ALLOCATABLE DIMENSION) (REAL 4 0 0 0 REAL ())
 0 0 () (2 0 DEFERRED () () () ()) 0 () () () 0 0)
-11 'tlm' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+12 't_0' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
+0)
+13 't_n' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
+UNKNOWN UNKNOWN 0 0) (INTEGER 4 0 0 0 INTEGER ()) 0 0 () () 0 () () () 0
+0)
+14 'tlm' 'main_globvar' '' 1 ((VARIABLE UNKNOWN-INTENT UNKNOWN-PROC
 UNKNOWN IMPLICIT-SAVE 0 0 ALLOCATABLE DIMENSION) (REAL 8 0 0 0 REAL ())
 0 0 () (3 0 DEFERRED () () () () () ()) 0 () () () 0 0)
 )
 
-('adj' 0 2 'hatj' 0 3 'lt_init' 0 4 'main_globvar' 0 5 'ndt' 0 6
-'nlayermx' 0 7 'noms' 0 8 'nqmx' 0 9 'pq_c' 0 10 'tlm' 0 11)
+('adj' 0 2 'hatj' 0 3 'j_idx' 0 4 'lt_init' 0 5 'main_globvar' 0 6 'ndt'
+0 7 'nlayermx' 0 8 'noms' 0 9 'nqmx' 0 10 'pq_c' 0 11 't_0' 0 12 't_n' 0
+13 'tlm' 0 14)

@@ -36,19 +36,64 @@ INTEGER N_files ! Number of files in control directory
 INTEGER N_choice ! Choice of file
 CHARACTER(len=100) dummy 
 INTEGER iostat ! Reading error integer 
-INTEGER N ,iq, t ! loop iterators 
+INTEGER N_f ,iq, t, i ! loop iterators 
 INTEGER a,b ! loop iterators 
 
-REAL*8, ALLOCATABLE :: TLM_double(:,:)
+REAL*8 Curiosity_O2_mmr ! NEED TO CREATE A ROUTINE TO READ REAL DATA IN
 
 
+! ==================
+! L-BFGS-B Variables
+! ==================
+INTEGER,PARAMETER :: nmax = 1024 ! Dimension of largest problem to be solved
+INTEGER,PARAMETER :: mmax = 17 ! Maximum number of limited memory connections 
+CHARACTER(len=60) task ! First entry = START 
+                       ! Return of task(1:2) = "FG", user must evaluate function f and gradient g
+                       !        at the returned value of x 
+                       ! Return of task(1:5) = "NEW_X", an iteration of the algorithm has concluded
+                       !        and f and g contain f(x) and g(x) respectively.
+                       ! " "    of task(1:4) = "CONV", termination test is satisfied 
+                       ! " "    of task(1:4) = "ABNO", termination ended without satisfying termination
+                       !        test conditions, x contains best approximation found, and f and g hold 
+                       !        f(x) and g(x) respectively. 
+                       ! " "    of task(1:5) = "ERROR", routine found errors in input parameters.
+CHARACTER(len=60) csave ! character working array 
+LOGICAL lsave(4) ! On exit where TASK(1:4) = "NEW_X":
+                 ! lsave(1) = .true. - initial x did not satisfy bounds 
+                 ! lsave(2) = .true. - problem contains bounds 
+                 ! lsave(3) = .true. - each variable has upper and lower bounds
+INTEGER n ! Number of variables 
+INTEGER m ! Number of corrections used in the limited memory matrix [range 3 <= m <= 20 is recommended]
+INTEGER iprint ! Frequency + type of output from the L-BFGS-B routine 
+               ! iprint < 0 : none 
+               ! iprint = 0 : one line at last iteration 
+               ! 0 < iprint < 99 : f and |proj g| at each iteration 
+               ! iprint = 99 : details of every iteration bar n-vectors 
+               ! iprint = 100 : changes of active set and final x 
+               ! iprint > 100 : details of every iteration including x and g 
+               ! for iprint > 0, iterate.dat summarises the iteration 
+INTEGER,ALLOCATABLE :: nbd(:), iwa(:), isave(:)
+REAL*8 f ! value of the function at the point x 
+REAL*8 factr ! tolerance for routine to stop Optimization.
+             ! routine will stop for :
+             !
+             ! (f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= factr*epsmch
+             !
+             ! where epsmch is the machine precision auto set by code. 
+             ! factr = 1.D+12 low accuracy 
+             !       = 1.D+7 moderate accuracy 
+             !       = 1.D+1 high accuracy
+REAL*8 pgtol ! Iteration will stop when: 
+             ! 
+             ! max{|proj g_i | i = 1, ..., n} <= pgtol
+             !
+             ! and can be suppressed as a stopping condition by settin pgtol = 0
 
-
-
-
-
-
-
+REAL*8,ALLOCATABLE :: x(:), l(:), u(:), g(:), dsave(:), wa(:)
+! l(:) : lower bounds of all variables (length n)
+! u(:) : uppwer bounds of all variables (length n) 
+! x(:) : set by user as the initial estimate of the solution vector (length n)
+! g(:) : components of the gradient at the point x 
 
 ! =========================================================
 ! Stage 1.0: Selection of the 1-D model files to be studied 
@@ -73,10 +118,10 @@ write(*,"(a25)")"========================="
 
 
 
-10 DO N = 1, N_files
-    READ(10,'(a)',iostat = iostat) NAME_LIST(N)
+10 DO N_f = 1, N_files
+    READ(10,'(a)',iostat = iostat) NAME_LIST(N_f)
     ! Display in terminal for user selection 
-    WRITE(*,"(I5,A20)") N,  TRIM(NAME_LIST(N))
+    WRITE(*,"(I5,A20)") N_f,  TRIM(NAME_LIST(N_f))
    ENDDO
 
 ! Choice of file 
@@ -121,10 +166,8 @@ READ(10,"(a15,I5)") dummy, nlayermx
 ALLOCATE(noms(nqmx))
 ALLOCATE(pq_c(ndt,nqmx*nlayermx))
 pq_c(:,:) = 0.E0 
-! ALLOCATE(TLM_double(nqmx*nlayermx,nqmx*nlayermx))
 ALLOCATE(TLM(nqmx*nlayermx,nqmx*nlayermx,ndt))
 ALLOCATE(ADJ(nqmx*nlayermx,nqmx*nlayermx,ndt))
-
 
 ! Discard next line
 READ(10,"(a)") dummy
@@ -156,5 +199,102 @@ ENDDO
 
 call adjoint_1D
 
+! ===================================
+! Stage 3.0 : Optimization Procedures
+! =================================== 
 
-END
+! Allocation of the variables used in L-BFGS-B 
+n = nqmx*nlayermx 
+m = 5 
+
+ALLOCATE(nbd(nmax))
+ALLOCATE(iwa(3*nmax))
+ALLOCATE(isave(44))
+ALLOCATE(x(nmax))
+ALLOCATE(l(nmax))
+ALLOCATE(u(nmax))
+ALLOCATE(g(nmax))
+ALLOCATE(dsave(29))
+ALLOCATE(wa(2*mmax*nmax + 5*nmax + 11*mmax*mmax + 8*mmax))
+
+! Specification of the bounds of the variables.
+
+! Trial One : make +/- 50% of control values up to a maximum
+			  ! of 0.99.
+
+! DO i = 1, n 
+
+	! IF ( PQ_c(t_0,i) < 1.e-30 ) THEN 
+		! PQ_c(t_0,i) = 0.D0 
+		! u(i) = 0.D0
+		! l(i) = 0.D0
+		! CONTINUE 
+	! ENDIF 
+	
+	! l(i) = PQ_c(t_0,i)*0.1D0
+	! u(i) = PQ_c(t_0,i)*2.D0
+	
+	! IF ( u(i) >= 0.99D0 ) u(i) = 0.99D0
+	! IF ( l(i) < 0. ) l(i) = 0.D0 
+	
+	! IF ( u(i) < l(i) ) THEN 
+		! WRITE(*,*) "WHAT" 
+		! WRITE(*,*) pq_c(t_0,i), u(i), l(i), i
+		! stop
+	! ENDIF 
+
+	! nbd(i) = 2 ! = upper and lower bounds are present
+
+	! Define the starting point as the control 
+	! x(i) = PQ_c(t_0,i)*1.D0
+
+! ENDDO 
+
+! NEED REAL ROUTINE TO BE MADE 
+! Curiosity_O2_mmr = 0.002160D0*(43.34/16.)
+
+
+! == BEGIN 
+! task = 'START'
+
+! iprint = 1 
+! factr = 1.0D1
+! pgtol=1.0D-5
+! pgtol=0.
+
+! iq = 1
+
+! 111 continue 
+
+! call setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint, &
+	! csave,lsave,isave,dsave)
+
+! IF ( task(1:2) .eq. "FG" ) THEN 
+! Need to construct value for F and G 
+
+	! IF ( iq == 1 ) THEN 
+			! f = Curiosity_O2_mmr - PQ_c(t_N,J_idx)
+			! g = hatJ(t_0,:)*(-1.D0)
+			! GOTO 111 
+	! ENDIF 
+	
+! f = Curiosity_O2_mmr - x(J_idx)
+
+! g = hatJ(t_0,:)*(-1.D0)
+
+! goto 111
+
+! ENDIF 
+
+! IF ( task(1:5) .eq. "NEW_X" ) goto 111
+
+
+! DO i = 1, n
+! WRITE(*,*) PQ_c(t_0,i), X(i), X(i)/PQ_c(t_0,i) 
+! ENDDO 
+
+! STOP 
+
+
+END 
+

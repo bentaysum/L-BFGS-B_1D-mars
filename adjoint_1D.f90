@@ -14,11 +14,9 @@ INTEGER t, iq
 
 INTEGER sol_N, sol_0 ! Sol of forecast and backtrace 
 REAL lt_N, lt_0 ! Local time of forecast on sol_N and sol_0
-INTEGER t_N, t_0 ! Forecast and backtrace timestep 
 
 CHARACTER(len=10) J_TRACER 
 INTEGER J_LAYER 
-INTEGER J_idx 
 
 
 ! Asks the user which timestep out of NDT they would like to 
@@ -148,6 +146,7 @@ DO t = (t_N-t_0) - 1, 1, -1
     write(*,*) hatJ(t,J_idx)
 ENDDO 
 
+RETURN 
 
 
 END 
