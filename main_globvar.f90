@@ -18,6 +18,8 @@ REAL*8, ALLOCATABLE :: hatJ(:,:)
 INTEGER t_N, t_0
 ! Index of forecast element 
 INTEGER J_idx
+! Transition Matrix 
+REAL*8, ALLOCATABLE :: A_N(:,:), A_N_T(:,:)
 
 END MODULE main_globvar
 

@@ -140,10 +140,16 @@ ENDDO
 
 50 WRITE(*,*) "Sensitivity vector of ", trim(J_TRACER), " at layer ", J_LAYER, " initialised..."
 
+A_N = TLM(:,:,t_0)
+DO t = t_0 + 1, t_N
+	A_N = MATMUL(A_N,TLM(:,:,t))
+ENDDO 
+
+A_N_T = TRANSPOSE( A_N )
+
 ! Engage backtrace of the adjoint 
 DO t = (t_N-t_0) - 1, 1, -1 
     hatJ(t,:) = MATMUL(ADJ(:,:,t),hatJ(t+1,:))
-    write(*,*) hatJ(t,J_idx)
 ENDDO 
 
 RETURN 

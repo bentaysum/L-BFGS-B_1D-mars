@@ -41,6 +41,7 @@ INTEGER a,b ! loop iterators
 
 REAL*8 Curiosity_O2_mmr ! NEED TO CREATE A ROUTINE TO READ REAL DATA IN
 
+REAL*8, ALLOCATABLE :: dPQ(:) ! Perturbation vector for TLM calculations 
 
 ! ==================
 ! L-BFGS-B Variables
@@ -89,7 +90,7 @@ REAL*8 pgtol ! Iteration will stop when:
              !
              ! and can be suppressed as a stopping condition by settin pgtol = 0
 
-REAL*8,ALLOCATABLE :: x(:), l(:), u(:), g(:), dsave(:), wa(:)
+REAL*8,ALLOCATABLE :: x(:),x0(:), l(:), u(:), g(:), dsave(:), wa(:)
 ! l(:) : lower bounds of all variables (length n)
 ! u(:) : uppwer bounds of all variables (length n) 
 ! x(:) : set by user as the initial estimate of the solution vector (length n)
@@ -168,6 +169,8 @@ ALLOCATE(pq_c(ndt,nqmx*nlayermx))
 pq_c(:,:) = 0.E0 
 ALLOCATE(TLM(nqmx*nlayermx,nqmx*nlayermx,ndt))
 ALLOCATE(ADJ(nqmx*nlayermx,nqmx*nlayermx,ndt))
+ALLOCATE(A_N(nqmx*nlayermx,nqmx*nlayermx)) 
+ALLOCATE(A_N_T(nqmx*nlayermx,nqmx*nlayermx)) 
 
 ! Discard next line
 READ(10,"(a)") dummy
@@ -190,12 +193,17 @@ call oneDmgcm_reader(TRIM(head_dir)//TRIM(control_dir)//TRIM(CONTROL_NCDF))
 WRITE(*,*) "BINARY TLM FILE : ", TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN) 
 OPEN(50,FILE = TRIM(head_dir)//TRIM(tlm_dir)//TRIM(TLM_BIN), ACCESS = 'direct', &
         RECL = nqmx*nlayermx*nqmx*nlayermx*8)
+
 DO t = 1, ndt 
     READ(50,rec=t) ( ( TLM(a,b,t), a = 1, nqmx*nlayermx ), b = 1, nqmx*nlayermx )
     ! Adjoint is the TLM transpose 
     write(*,"(F6.2,A1)") 100.*REAL(t)/REAL(ndt), "%"
     ADJ(:,:,t) = TRANSPOSE(TLM(:,:,t))
+
 ENDDO 
+
+A_N_T = TRANSPOSE(A_N_T)
+
 
 call adjoint_1D
 
@@ -205,7 +213,7 @@ call adjoint_1D
 
 ! Allocation of the variables used in L-BFGS-B 
 n = nqmx*nlayermx 
-m = 5 
+m = 7
 
 ALLOCATE(nbd(nmax))
 ALLOCATE(iwa(3*nmax))
@@ -217,84 +225,80 @@ ALLOCATE(g(nmax))
 ALLOCATE(dsave(29))
 ALLOCATE(wa(2*mmax*nmax + 5*nmax + 11*mmax*mmax + 8*mmax))
 
+ALLOCATE(dPQ(nqmx*nlayermx))
+
 ! Specification of the bounds of the variables.
 
-! Trial One : make +/- 50% of control values up to a maximum
-			  ! of 0.99.
 
-! DO i = 1, n 
+iprint = 1 
+factr = 1.0D+7
+pgtol = 1.0D-5
 
-	! IF ( PQ_c(t_0,i) < 1.e-30 ) THEN 
-		! PQ_c(t_0,i) = 0.D0 
-		! u(i) = 0.D0
-		! l(i) = 0.D0
-		! CONTINUE 
-	! ENDIF 
+DO i = 1, n 
+
+	! First guess of initial conditions PQ_c in x(:)
+	x(i) = PQ_c(t_0,i)*1.D0 
 	
-	! l(i) = PQ_c(t_0,i)*0.1D0
-	! u(i) = PQ_c(t_0,i)*2.D0
+	IF ( x(i) < 1.D-30 ) THEN 
+		x(i) = 1.D-30
+		
+		l(i) = 1.D-30 
+		u(i) = 1.D-30 
+		
+		nbd(i) = 2
+		CONTINUE 
+		
+	ENDIF 
 	
-	! IF ( u(i) >= 0.99D0 ) u(i) = 0.99D0
-	! IF ( l(i) < 0. ) l(i) = 0.D0 
+	l(i) = MAX( 1.D-30, x(i)*5.D-1)
+	u(i) = MIN( 9.9D-1, x(i)*1.5D0)
 	
-	! IF ( u(i) < l(i) ) THEN 
-		! WRITE(*,*) "WHAT" 
-		! WRITE(*,*) pq_c(t_0,i), u(i), l(i), i
-		! stop
-	! ENDIF 
+	nbd(i) = 2 
+	
+		
+ENDDO 
 
-	! nbd(i) = 2 ! = upper and lower bounds are present
-
-	! Define the starting point as the control 
-	! x(i) = PQ_c(t_0,i)*1.D0
-
-! ENDDO 
 
 ! NEED REAL ROUTINE TO BE MADE 
-! Curiosity_O2_mmr = 0.002160D0*(43.34/16.)
+Curiosity_O2_mmr = 0.002160D0*(16./43.34)
 
+task = 'START'
 
-! == BEGIN 
-! task = 'START'
+i = 1
 
-! iprint = 1 
-! factr = 1.0D1
-! pgtol=1.0D-5
-! pgtol=0.
+111 CONTINUE 
 
-! iq = 1
+call setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint, &
+            csave,lsave,isave,dsave)
+		
 
-! 111 continue 
-
-! call setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint, &
-	! csave,lsave,isave,dsave)
-
-! IF ( task(1:2) .eq. "FG" ) THEN 
-! Need to construct value for F and G 
-
-	! IF ( iq == 1 ) THEN 
-			! f = Curiosity_O2_mmr - PQ_c(t_N,J_idx)
-			! g = hatJ(t_0,:)*(-1.D0)
-			! GOTO 111 
-	! ENDIF 
+IF ( task(1:2) .eq. "FG" ) THEN
 	
-! f = Curiosity_O2_mmr - x(J_idx)
+	IF ( i == 1 ) THEN 
+	  
+	  f = pq_c(t_N,J_idx)*1.D0 - Curiosity_O2_mmr 
+	  
+	  g = hatJ(t_0,:)*f 
+		
+	ELSE 
+	
+	 f = &
+		pq_c(t_0,J_idx) + DOT_PRODUCT( A_N(J_idx,:) , x(:n) - pq_c(t_0,:)*1.D0 ) &
+		- Curiosity_O2_mmr 
+	 
+	 g = hatJ(t_0,:)*f
+	
+	ENDIF 
+	
+	i = i + 1
+	goto 111
+	
+ENDIF 
 
-! g = hatJ(t_0,:)*(-1.D0)
+IF ( task(1:5) .eq. "NEW_X" ) goto 111 
 
-! goto 111
-
-! ENDIF 
-
-! IF ( task(1:5) .eq. "NEW_X" ) goto 111
-
-
-! DO i = 1, n
-! WRITE(*,*) PQ_c(t_0,i), X(i), X(i)/PQ_c(t_0,i) 
-! ENDDO 
-
-! STOP 
-
+write(*,*)  PQ_c(T_N,J_idx)/Curiosity_O2_mmr
+write(*,*)  (Curiosity_O2_mmr - f)/Curiosity_O2_mmr
+STOP 
 
 END 
-
