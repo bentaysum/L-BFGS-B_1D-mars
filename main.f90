@@ -169,8 +169,7 @@ ALLOCATE(pq_c(ndt,nqmx*nlayermx))
 pq_c(:,:) = 0.E0 
 ALLOCATE(TLM(nqmx*nlayermx,nqmx*nlayermx,ndt))
 ALLOCATE(ADJ(nqmx*nlayermx,nqmx*nlayermx,ndt))
-ALLOCATE(A_N(nqmx*nlayermx,nqmx*nlayermx)) 
-ALLOCATE(A_N_T(nqmx*nlayermx,nqmx*nlayermx)) 
+ALLOCATE(mmean(ndt,nlayermx))
 
 ! Discard next line
 READ(10,"(a)") dummy
@@ -202,8 +201,6 @@ DO t = 1, ndt
 
 ENDDO 
 
-A_N_T = TRANSPOSE(A_N_T)
-
 
 call adjoint_1D
 
@@ -231,8 +228,8 @@ ALLOCATE(dPQ(nqmx*nlayermx))
 
 
 iprint = 1 
-factr = 1.0D+7
-pgtol = 1.0D-5
+factr = 1.0D+1
+pgtol = 0.!1.0D-5
 
 DO i = 1, n 
 
@@ -260,7 +257,7 @@ ENDDO
 
 
 ! NEED REAL ROUTINE TO BE MADE 
-Curiosity_O2_mmr = 0.002160D0*(16./43.34)
+Curiosity_O2_mmr = 0.002160D0*(16./mmean(t_N,1)) 
 
 task = 'START'
 
@@ -275,21 +272,13 @@ call setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint, &
 IF ( task(1:2) .eq. "FG" ) THEN
 	
 	IF ( i == 1 ) THEN 
-	  
-	  f = pq_c(t_N,J_idx)*1.D0 - Curiosity_O2_mmr 
-	  
-	  g = hatJ(t_0,:)*f 
-		
+		call costfunction(curiosity_O2_mmr, PQ_c(t_0,:)*1.D0, f) 
+		g = hatJ(t_0,:)/Curiosity_O2_mmr 
+	
 	ELSE 
-	
-	 f = &
-		pq_c(t_0,J_idx) + DOT_PRODUCT( A_N(J_idx,:) , x(:n) - pq_c(t_0,:)*1.D0 ) &
-		- Curiosity_O2_mmr 
-	 
-	 g = hatJ(t_0,:)*f
-	
+		call costfunction(curiosity_O2_mmr, x(:n), f) 
+		g = hatJ(t_0,:)/Curiosity_O2_mmr 
 	ENDIF 
-	
 	i = i + 1
 	goto 111
 	
@@ -297,8 +286,66 @@ ENDIF
 
 IF ( task(1:5) .eq. "NEW_X" ) goto 111 
 
-write(*,*)  PQ_c(T_N,J_idx)/Curiosity_O2_mmr
-write(*,*)  (Curiosity_O2_mmr - f)/Curiosity_O2_mmr
+WRITE(*,*) MAXVAL( x(:n) - PQ_c(t_0,:) ) 
+
+write(*,*) PQ_c(t_N,J_idx), Curiosity_O2_mmr
+write(*,*) (PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , x(:n) - PQ_c(t_0,:) ) ) , Curiosity_O2_mmr
+
+
+write(*,"(16A15)") ( trim(noms(iq)), iq = 1, 16 ) 
+
+DO i = 1, nlayermx
+	WRITE(*,"(16E15.7)") ( x( (iq-1)*nlayermx + i )/PQ_c(t_0, (iq-1)*nlayermx + i ), iq = 1, 16 )
+ENDDO 
+
+
 STOP 
 
 END 
+
+
+SUBROUTINE costfunction( curiosity_O2, PQ_i, f )
+
+! Calculates the value of the optimizable cost function:
+!
+! COST_i = [1-D Model Calculated O2] + ( hatJ , PQ_i - PQ_c )
+!	   - [Curiosity O2 Measurement]
+!
+! The value of the gradient at all times is, at the moment, simply
+! hatJ, the sensitivity vector calculated by the Adjoint model.
+use main_globvar
+ 
+IMPLICIT NONE 
+
+! Input
+! ============
+REAL*8 curiosity_O2, PQ_i(nqmx*nlayermx)
+! Local 
+! ============
+REAL*8 dPQi(nqmx*nlayermx)
+
+! Output 
+! ============
+REAL*8 f ! Cost function value
+
+
+! ===================================================================
+
+dPQi = PQ_i - PQ_c(t_0,:)
+
+! f = PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , dPQi ) &
+	! - curiosity_O2
+	
+f = PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , dPQi )  
+	
+f = ABS((f/curiosity_O2) - 1.D0)
+
+	
+END
+
+
+
+
+
+
+

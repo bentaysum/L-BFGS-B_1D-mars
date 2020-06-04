@@ -22,6 +22,13 @@ CHARACTER(len=10) tracer
 retval = nf_open(filestring, NF_NOWRITE, ncid)
 if (retval .ne. nf_noerr) call handle_err(retval)
 
+! Mean Molar Mass of Air
+retval = nf_inq_varid(ncid, "mmean", varid)
+if (retval .ne. nf_noerr) call handle_err(retval)
+
+retval = nf_get_var_REAL(ncid, varid, mmean )
+if (retval .ne. nf_noerr) call handle_err(retval)
+
 ! Iterate through the tracers in the order that they appear in 
 ! the noms global variable to ensure they match with the order
 ! of the TLM/Adjoint matrix

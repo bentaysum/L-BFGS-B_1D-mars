@@ -6,6 +6,13 @@ adjoint, developed by Benjamin M. Taysum.
 
 ## Log 
 
+04/06/2020 
+
+Routine produces optimized profiles! 
+
+Work on making the routine more interactive. Investigate the new optimised profiles
+properly in python, and assess validity with the fully integrated 1-D model.
+
 ### 03/06/2020
 
 Optimization routine fails to work. Poorly defined cost function and gradient is probably the

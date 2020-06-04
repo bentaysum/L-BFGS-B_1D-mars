@@ -18,10 +18,17 @@ Machine precision = 2.220D-16
  N =          675     M =            7
 
    it   nf  nseg  nact  sub  itls  stepl    tstep     projg        f
-    0    1     -     -   -     -     -        -     4.076D-05  1.260D-04
-    1    5   227   262  ---    3  0.0D+00  0.0D+00  5.156D-05  1.593D-04
+    0    1     -     -   -     -     -        -     4.784D-04  1.881D-01
+    1   14   250   285  ---   12  3.2D-01  4.2D-04  4.783D-04  1.266D-03
+    2   26   250   285  ---   11  3.1D-03  2.9D-06  4.783D-04  1.629D-06
+    3   46   250   285  ---   19  4.1D-19  3.7D-22      -          -
 
-CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH             
+ABNORMAL_TERMINATION_IN_LNSRCH                              
 
- Total User time 8.755E-04 seconds.
+ Line search cannot locate an adequate point after 20 function
+  and gradient evaluations.  Previous x, f and g restored.
+ Possible causes: 1 error in function or gradient evaluation;
+                  2 rounding error dominate computation.
+
+ Total User time 1.690E-03 seconds.
 
