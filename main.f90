@@ -295,7 +295,7 @@ write(*,*) (PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , x(:n) - PQ_c(t_0,:) ) )
 write(*,"(16A15)") ( trim(noms(iq)), iq = 1, 16 ) 
 
 DO i = 1, nlayermx
-	WRITE(*,"(16E15.7)") ( x( (iq-1)*nlayermx + i )/PQ_c(t_0, (iq-1)*nlayermx + i ), iq = 1, 16 )
+	WRITE(*,"(16F15.7)") ( 100.D0*(x( (iq-1)*nlayermx + i )/PQ_c(t_0, (iq-1)*nlayermx + i ) - 1.D0 ), iq = 1, 16 )
 ENDDO 
 
 
