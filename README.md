@@ -6,7 +6,14 @@ adjoint, developed by Benjamin M. Taysum.
 
 ## Log 
 
-04/06/2020 
+
+### 05/06/2020 
+
+netCDF output routine in works. Will output the optimised input state, and it's
+forward modelled (via the Tangent Linear Model currently) output state, in the same
+format as the 1-D model.
+
+### 04/06/2020 
 
 Routine produces optimized profiles! 
 

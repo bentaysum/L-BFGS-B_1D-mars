@@ -36,7 +36,7 @@ INTEGER N_files ! Number of files in control directory
 INTEGER N_choice ! Choice of file
 CHARACTER(len=100) dummy 
 INTEGER iostat ! Reading error integer 
-INTEGER N_f ,iq, t, i ! loop iterators 
+INTEGER N_f ,iq, t, i, lyr ! loop iterators 
 INTEGER a,b ! loop iterators 
 
 REAL*8 Curiosity_O2_mmr ! NEED TO CREATE A ROUTINE TO READ REAL DATA IN
@@ -96,6 +96,13 @@ REAL*8,ALLOCATABLE :: x(:),x0(:), l(:), u(:), g(:), dsave(:), wa(:)
 ! x(:) : set by user as the initial estimate of the solution vector (length n)
 ! g(:) : components of the gradient at the point x 
 
+REAL*8,ALLOCATABLE :: forecast_PQ(:)
+
+
+
+
+
+
 ! =========================================================
 ! Stage 1.0: Selection of the 1-D model files to be studied 
 ! =========================================================
@@ -139,6 +146,7 @@ write(*,"(a25)")"========================="
 
 CLOSE(10)
 
+
 CONTROL_NCDF = TRIM(NAME_LIST(N_choice))
 TLM_BIN = TRIM(CONTROL_NCDF(1: LEN_TRIM(CONTROL_NCDF) - 3 )) // "_tlm.bin"
 TLM_TEXT = TRIM(CONTROL_NCDF(1: LEN_TRIM(CONTROL_NCDF) - 3 )) // "_tlm.txt"
@@ -179,6 +187,7 @@ DO iq = 1,nqmx
     READ(10,"(a10,a5)") noms(iq), dummy
 ENDDO
 CLOSE(10)
+
 
 ! -------------------------------------------------------
 ! Stage 1.2 : Construct the control state vector 
@@ -223,7 +232,7 @@ ALLOCATE(dsave(29))
 ALLOCATE(wa(2*mmax*nmax + 5*nmax + 11*mmax*mmax + 8*mmax))
 
 ALLOCATE(dPQ(nqmx*nlayermx))
-
+ALLOCATE(forecast_PQ(nlayermx*nqmx))
 ! Specification of the bounds of the variables.
 
 
@@ -231,6 +240,8 @@ iprint = 1
 factr = 1.0D+1
 pgtol = 0.!1.0D-5
 
+lyr = 1 ! Layer in model 
+iq = 1 ! Tracer Index in Noms
 DO i = 1, n 
 
 	! First guess of initial conditions PQ_c in x(:)
@@ -247,17 +258,31 @@ DO i = 1, n
 		
 	ENDIF 
 	
+	
 	l(i) = MAX( 1.D-30, x(i)*5.D-1)
 	u(i) = MIN( 9.9D-1, x(i)*1.5D0)
 	
 	nbd(i) = 2 
+
+	IF ( trim(noms(iq)) == "h2o_ice" ) THEN 
+		l(i) = 1.D-30
+		u(i) = 2.D-30 
+		x(i) = 1.D-30
+		PQ_c(:,i) = 1.D-30 
+	ENDIF 
+
+	lyr = lyr + 1 
 	
+	if ( lyr > nlayermx ) then 
+		lyr = 1 
+		iq = iq + 1
+	endif 
 		
 ENDDO 
 
 
 ! NEED REAL ROUTINE TO BE MADE 
-Curiosity_O2_mmr = 0.002160D0*(16./mmean(t_N,1)) 
+Curiosity_O2_mmr = 0.002160D0*(16./mmean(t_N,1))
 
 task = 'START'
 
@@ -286,22 +311,56 @@ ENDIF
 
 IF ( task(1:5) .eq. "NEW_X" ) goto 111 
 
-WRITE(*,*) MAXVAL( x(:n) - PQ_c(t_0,:) ) 
+! Stage 4: Write the new initial atmospheric state, and it's forward modelled end state via the adjoint 
+! 		   to a netCDF4 output file 
 
-write(*,*) PQ_c(t_N,J_idx), Curiosity_O2_mmr
-write(*,*) (PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , x(:n) - PQ_c(t_0,:) ) ) , Curiosity_O2_mmr
+! Forward cast the optimized initial state vector to the forecast timestep 
+! via the Tangent Linear Model 
 
 
-write(*,"(16A15)") ( trim(noms(iq)), iq = 1, 16 ) 
+dPQ = x(:n) - pq_c(t_0,:)
 
-DO i = 1, nlayermx
-	WRITE(*,"(16F15.7)") ( 100.D0*(x( (iq-1)*nlayermx + i )/PQ_c(t_0, (iq-1)*nlayermx + i ) - 1.D0 ), iq = 1, 16 )
+DO t = t_0, t_N - 1
+		
+	
+	forecast_PQ = pq_c(t,:) + MATMUL( TLM(:,:,t) , dPQ ) 
+
+	dPQ = forecast_PQ - pq_c(t+1,:)
+
 ENDDO 
+
+call optimised_out( x(:n) , forecast_PQ )
+
+
+
+
 
 
 STOP 
 
 END 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 SUBROUTINE costfunction( curiosity_O2, PQ_i, f )
@@ -338,7 +397,7 @@ dPQi = PQ_i - PQ_c(t_0,:)
 	
 f = PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , dPQi )  
 	
-f = ABS((f/curiosity_O2) - 1.D0)
+f = abs((f/curiosity_O2) - 1.D0)
 
 	
 END

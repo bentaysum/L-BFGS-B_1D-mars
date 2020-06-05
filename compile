@@ -11,7 +11,7 @@ BLAS=$LBFGSB_DIR/blas.f
 TIMER=$LBFGSB_DIR/timer.f
 
 
-gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff -c main_globvar.f90 oneDmgcm_reader.f90 adjoint_1D.f90 main.f90 
-gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff main_globvar.o oneDmgcm_reader.o adjoint_1D.o $LBFGSB $LINPACK $BLAS $TIMER main.o -o run.e
+gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff -c main_globvar.f90 oneDmgcm_reader.f90 adjoint_1D.f90 optimised_out.f90 main.f90 
+gfortran -I$NCDFINC -I $NCDFLIB -lnetcdff main_globvar.o oneDmgcm_reader.o adjoint_1D.o optimised_out.o $LBFGSB $LINPACK $BLAS $TIMER main.o -o run.e
 
 # gfortran  -I$NCDFINC -I $NCDFLIB -lnetcdff -c main_globvar.f90 main.f90  oneDmgcm_reader.f90 
