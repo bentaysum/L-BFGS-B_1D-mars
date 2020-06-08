@@ -298,11 +298,11 @@ IF ( task(1:2) .eq. "FG" ) THEN
 	
 	IF ( i == 1 ) THEN 
 		call costfunction(curiosity_O2_mmr, PQ_c(t_0,:)*1.D0, f) 
-		g = hatJ(t_0,:)/Curiosity_O2_mmr 
+		g = hatJ(t_0,:)
 	
 	ELSE 
 		call costfunction(curiosity_O2_mmr, x(:n), f) 
-		g = hatJ(t_0,:)/Curiosity_O2_mmr 
+		g = hatJ(t_0,:) 
 	ENDIF 
 	i = i + 1
 	goto 111
@@ -318,6 +318,9 @@ IF ( task(1:5) .eq. "NEW_X" ) goto 111
 ! via the Tangent Linear Model 
 
 
+
+
+
 dPQ = x(:n) - pq_c(t_0,:)
 
 DO t = t_0, t_N - 1
@@ -328,6 +331,12 @@ DO t = t_0, t_N - 1
 	dPQ = forecast_PQ - pq_c(t+1,:)
 
 ENDDO 
+
+! WRITE(*,"(16A15)") (trim(noms(iq)), iq = 1, 16) 
+! DO lyr = 1,nlayermx
+	! WRITE(*,"(16E15.7)")  (forecast_PQ( (iq-1)*nlayermx + lyr )/ &
+							! pq_c(t_N, (iq-1)*nlayermx + lyr ), iq = 1,16 )
+! ENDDO
 
 call optimised_out( x(:n) , forecast_PQ )
 
@@ -397,7 +406,7 @@ dPQi = PQ_i - PQ_c(t_0,:)
 	
 f = PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , dPQi )  
 	
-f = abs((f/curiosity_O2) - 1.D0)
+f = abs(f - curiosity_O2)
 
 	
 END

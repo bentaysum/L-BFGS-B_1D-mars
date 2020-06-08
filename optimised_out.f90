@@ -24,7 +24,10 @@ INTEGER varid(nqmx) ! Variable ID's for each tracer
 INTEGER t_0id, t_Nid ! Temporal index id's
 INTEGER ncid ! file netCDF ID 
 
+INTEGER nx, x_dimid ! Dimensions of the output
+INTEGER dimids 
 
+nx = nlayermx
 
 ! name of the netcdf file 
 NETCDF_NAME = "optimized_state.nc" 
@@ -34,15 +37,21 @@ NETCDF_NAME = "optimized_state.nc"
 retval = nf_create(NETCDF_NAME, NF_CLOBBER, ncid)
 if (retval .ne. nf_noerr) call handle_err(retval)
 
+! Define the dimensions. NetCDF will hand back an ID for each. 
+retval = nf_def_dim(ncid, "x", NX, x_dimid)
+if (retval .ne. nf_noerr) call handle_err(retval)
+
+dimids = x_dimid 
 ! ===============================================================
 ! Define the PQ	variables, breaking the pq_0 and pq_N vectors into 
 ! individual tracer vectors as per the 1-D model output (ease of 
 ! comparison via Python analysis)
 ! ===============================================================
 DO iq = 1, nqmx 
-
+	
+	write(*,*) trim(noms(iq)) // "_0" 
 	retval = nf_def_var(ncid, trim(noms(iq)) // "_0", &
-					NF_DOUBLE, 1, nlayermx, varid(iq))
+					NF_DOUBLE,  dimids, varid(iq))
 	if (retval .ne. nf_noerr) call handle_err(retval)
 	
 	
@@ -72,13 +81,13 @@ DO iq = 1, nqmx
 	! Extract input 
 	pq0_iq = pq_0( (iq-1)*nlayermx + 1 : iq*nlayermx ) 
 	! Extrac forward cast state 
-	pqN_iq = pq_N( (iq-1)*nlayermx + 1 : iq*nlayermx )
+	! pqN_iq = pq_N( (iq-1)*nlayermx + 1 : iq*nlayermx )
 
 	retval = nf_put_var_double(ncid, varid(iq), pq0_iq)
 	if (retval .ne. nf_noerr) call handle_err(retval)
 
-	retval = nf_put_var_double(ncid, varid(iq), pqN_iq)
-	if (retval .ne. nf_noerr) call handle_err(retval)
+	! retval = nf_put_var_double(ncid, varid(iq), pqN_iq)
+	! if (retval .ne. nf_noerr) call handle_err(retval)
 	
 ENDDO 
 	
