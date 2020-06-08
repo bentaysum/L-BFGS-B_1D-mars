@@ -15,3 +15,20 @@ f     = function value
            * * *
 
 Machine precision = 2.220D-16
+ N =          675     M =            7
+
+   it   nf  nseg  nact  sub  itls  stepl    tstep     projg        f
+    0    1     -     -   -     -     -        -     4.784D-04  1.515D-04
+    1   14   226   262  ---   12  3.2D-01  4.2D-04  3.267D-04  1.019D-06
+    2   26   226   262  ---   11  3.1D-03  2.9D-06  3.257D-04  1.333D-09
+    3   46   226   262  ---   19  1.2D-19  1.1D-22      -          -
+
+ABNORMAL_TERMINATION_IN_LNSRCH                              
+
+ Line search cannot locate an adequate point after 20 function
+  and gradient evaluations.  Previous x, f and g restored.
+ Possible causes: 1 error in function or gradient evaluation;
+                  2 rounding error dominate computation.
+
+ Total User time 2.072E-03 seconds.
+

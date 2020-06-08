@@ -338,10 +338,11 @@ ENDDO
 							! pq_c(t_N, (iq-1)*nlayermx + lyr ), iq = 1,16 )
 ! ENDDO
 
-call optimised_out( x(:n) , forecast_PQ )
+call optimised_out( x(:n) )
 
 
-
+write(*,*) "CHA-CHING! : [Curiosity O2]/[1-D O2] = " , &
+curiosity_O2_mmr/(PQ_c(t_0,J_idx) + DOT_PRODUCT( hatJ(t_0,:) , x(:n) - PQ_c(t_0,:) ))
 
 
 

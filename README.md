@@ -6,6 +6,11 @@ adjoint, developed by Benjamin M. Taysum.
 
 ## Log 
 
+### 08/06/2020
+
+Output in netcdf format working; output is only the optimised initial state vector of
+the tangent linear model equation. Converse with paul about hooking up full 1-D 
+model as optimization routines forward forecast, and it's adjoint as the gradient calculator.
 
 ### 05/06/2020 
 

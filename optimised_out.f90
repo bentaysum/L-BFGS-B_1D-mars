@@ -1,106 +1,81 @@
-SUBROUTINE optimised_out( pq_0, pq_N ) 
+SUBROUTINE optimised_out( pq_0 ) 
 
 use main_globvar
+use netcdf 
 
 IMPLICIT NONE 
 
-include 'netcdf.inc'
+! Input ! 
+! ===== !
+REAL*8 pq_0(nqmx*nlayermx) ! Optimized input mixing ratios 
 
-! Input Variables
-! ===============
-REAL*8 pq_0(nqmx*nlayermx) ! Optimised input tracer mixing ratios 
-REAL*8 pq_N(nqmx*nlayermx) ! pq_0 forward modelled to the forecast time
+! Local !
+! ===== !
+CHARACTER(len=100) FILE_NAME 
 
-! Local Variables
-! ===============
-REAL*8 pq0_iq(nlayermx), pqN_iq(nlayermx) ! Individual tracers 
+INTEGER ncid
+INTEGER NY, y_dimid ! Individual tracer mmr's
+INTEGER NY_full, y_full_dimid ! Full vector 
+INTEGER full_varid, varid(nqmx) 
 
-CHARACTER(len=200) NETCDF_NAME ! NetCDF output name 
-INTEGER retval ! Error return
+INTEGER iq, lyr ! Loop iterators 
+INTEGER dimids(1)
 
-INTEGER iq ! Loop iterator 
-
-INTEGER varid(nqmx) ! Variable ID's for each tracer 
-INTEGER t_0id, t_Nid ! Temporal index id's
-INTEGER ncid ! file netCDF ID 
-
-INTEGER nx, x_dimid ! Dimensions of the output
-INTEGER dimids 
-
-nx = nlayermx
-
-! name of the netcdf file 
-NETCDF_NAME = "optimized_state.nc" 
+FILE_NAME = "trial.nc"
 
 
-! Construct the file 
-retval = nf_create(NETCDF_NAME, NF_CLOBBER, ncid)
-if (retval .ne. nf_noerr) call handle_err(retval)
+! Establish sizes of vectors
+NY = nlayermx 
+NY_full = nlayermx*nqmx
+
+! Create the file, or overwrite the one already present 
+call check( nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid) )
 
 ! Define the dimensions. NetCDF will hand back an ID for each. 
-retval = nf_def_dim(ncid, "x", NX, x_dimid)
-if (retval .ne. nf_noerr) call handle_err(retval)
+call check( nf90_def_dim(ncid, "y", NY, y_dimid) )
+call check( nf90_def_dim(ncid, "y_full", NY_full, y_full_dimid))
 
-dimids = x_dimid 
-! ===============================================================
-! Define the PQ	variables, breaking the pq_0 and pq_N vectors into 
-! individual tracer vectors as per the 1-D model output (ease of 
-! comparison via Python analysis)
-! ===============================================================
-DO iq = 1, nqmx 
-	
-	write(*,*) trim(noms(iq)) // "_0" 
-	retval = nf_def_var(ncid, trim(noms(iq)) // "_0", &
-					NF_DOUBLE,  dimids, varid(iq))
-	if (retval .ne. nf_noerr) call handle_err(retval)
-	
-	
-ENDDO 
+! Loop over all tracers and define their mixing ratio vectors
+dimids = (/y_full_dimid/)
+call check( nf90_def_var(ncid, "pq_0", NF90_DOUBLE, dimids , full_varid) )
 
-! Define the forecast and backtrace temporal indices t_0 and t_N 
-retval = nf_def_var(ncid, "t_0", &
-			NF_INT, 0, t_0id)
-if (retval .ne. nf_noerr) call handle_err(retval)
-
-retval = nf_def_var(ncid, "t_N", &
-			NF_INT, 0, t_Nid)
-if (retval .ne. nf_noerr) call handle_err(retval)
-
-
-! ===============
-! End define mode 
-! ===============
-retval = nf_enddef(ncid)
-if (retval .ne. nf_noerr) call handle_err(retval)
-
-! ===================================
-! Putting the variables into the file
-! ===================================
 DO iq = 1, nqmx
-	
-	! Extract input 
-	pq0_iq = pq_0( (iq-1)*nlayermx + 1 : iq*nlayermx ) 
-	! Extrac forward cast state 
-	! pqN_iq = pq_N( (iq-1)*nlayermx + 1 : iq*nlayermx )
-
-	retval = nf_put_var_double(ncid, varid(iq), pq0_iq)
-	if (retval .ne. nf_noerr) call handle_err(retval)
-
-	! retval = nf_put_var_double(ncid, varid(iq), pqN_iq)
-	! if (retval .ne. nf_noerr) call handle_err(retval)
-	
+	call check( nf90_def_var(ncid, trim(noms(iq)) // "_0", NF90_DOUBLE, y_dimid, &
+				varid(iq)) )
 ENDDO 
-	
 
-retval = nf_put_var_double(ncid, t_0id, t_0)
-if (retval .ne. nf_noerr) call handle_err(retval)
+! End define mode. This tells netCDF we are done defining metadata.
+call check( nf90_enddef(ncid) )
 
-retval = nf_put_var_double(ncid, t_Nid, t_N)
-if (retval .ne. nf_noerr) call handle_err(retval)
+! Write the data 
+! ==============
+! Full optimised state vector 
+call check( nf90_put_var(ncid,full_varid,pq_0) ) 
+! Individual chunks
+DO iq = 1,nqmx
+	call check( nf90_put_var(ncid,varid(iq), pq_0( (iq-1)*nlayermx + 1 : iq*nlayermx ) ) ) 
+ENDDO 
 
-! Close the file 
-retval = nf_close(ncid)
-if (retval .ne. nf_noerr) call handle_err(retval)
+call check( nf90_close(ncid) )
+
+return 
 
 
+
+
+
+
+
+contains
+
+  subroutine check(status)
+    integer, intent ( in) :: status
+    
+    if(status /= nf90_noerr) then 
+      print *, trim(nf90_strerror(status))
+      stop "Stopped"
+    end if
+  end subroutine check  
+  
+  
 END SUBROUTINE 
